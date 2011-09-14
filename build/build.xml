@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Particle Soup Build Scripts" default="build.deploy.dev">
+<property file="build.config"/>
+
+<target name="build.deploy.debug" depends="debug-compile,debug-package,debug-deploy"
+description="Build, package and deploy the (unsigned) app in debug mode."/>
+<target name="build.deploy.dev" depends="release-compile,dev-package,dev-deploy"
+description="Build, package and deploy the (unsigned) app in release mode."/>
+<target name="build.deploy.signed" depends="release-compile,release-package,sign-with-rim,sign-as-author,release-deploy"
+description="Build, package, sign and deploy the app in release mode."/>
+
+<target name="debug-compile" description="Build a debug version of the application swf">
+<exec executable="${sdk.home}/bin/amxmlc${bin.ext}" failonerror="true" dir="../bin">
+<arg line='-source-path ../src'/>
+<arg line='-default-size=${app.width},${app.height}'/>
+<arg line='-default-background-color ${app.background}'/>
+<arg line='-default-frame-rate ${app.framerate}'/>
+<arg line='-debug=true'/>
+<arg line='-optimize=true'/>
+<arg line='-library-path+="${app.libs}"'/>
+<arg line='-output ${app.filename}.swf'/>
+<arg line='${app.main}'/>
+</exec>
+</target>
+
+<target name="release-compile" description="Build the release version of the application swf">
+<exec executable="${sdk.home}/bin/amxmlc${bin.ext}" failonerror="true" dir="../bin">
+<arg line='-source-path ../src'/>
+<arg line='-default-size=${app.width},${app.height}'/>
+<arg line='-default-background-color ${app.background}'/>
+<arg line='-default-frame-rate ${app.framerate}'/>
+<arg line='-debug=false'/>
+<arg line='-optimize=true'/>
+<arg line='-library-path+="${app.libs}"'/>
+<arg line='-output ${app.filename}.swf'/>
+<arg line='${app.main}'/>
+</exec>
+</target>
+
+<target name="debug-package" description="Create the debug application .bar package" depends="copy-config-with-token,copy-config-no-token">
+<exec executable="${sdk.home}/bin/blackberry-airpackager${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-devMode"/>
+<arg value="-target"/>
+<arg value="bar-debug"/>
+<arg value="-connect"/>
+<arg value="${host.ip}"/>
+<arg value="-package"/>
+<arg value="${app.filename}-debug.bar"/>
+<arg value="${app.filename}-app.xml"/>
+<arg value="${app.filename}.swf"/>
+<arg value="blackberry-tablet-icon.png"/>
+<arg value="${app.filename}-splash.png"/>
+<arg value="blackberry-tablet.xml"/>
+</exec>
+</target>
+
+<target name="dev-package" description="Create the dev application .bar package" depends="copy-config-with-token,copy-config-no-token">
+<exec executable="${sdk.home}/bin/blackberry-airpackager${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-devMode"/>
+<arg value="-package"/>
+<arg value="${app.filename}-dev.bar"/>
+<arg value="${app.filename}-app.xml"/>
+<arg value="${app.filename}.swf"/>
+<arg value="blackberry-tablet-icon.png"/>
+<arg value="${app.filename}-splash.png"/>
+<arg value="blackberry-tablet.xml"/>
+</exec>
+</target>
+
+<target name="copy-config-with-token" if="sign.authorid">
+<copy file="blackberry-tablet.xml" todir="../bin" overwrite="true">
+<filterset begintoken="&lt;/" endtoken="&gt;" recurse="false">
+<filter token="qnx" value="&lt;author&gt;${sign.authorname}&lt;/author&gt;&#10;&lt;authorId&gt;${sign.authorid}&lt;/authorId&gt;&#10;&lt;/qnx&gt;"/>
+</filterset>
+</copy>
+</target>
+
+<target name="copy-config-no-token" unless="sign.authorid">
+<copy file="blackberry-tablet.xml" todir="../bin" overwrite="true"/>
+</target>
+
+<target name="release-package" description="Create the release application .bar package" depends="increment-build-number">
+<copy file="blackberry-tablet.xml" todir="../bin" overwrite="true"/>
+<exec executable="${sdk.home}/bin/blackberry-airpackager${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-package"/>
+<arg value="${app.filename}.bar"/>
+<arg value="${app.filename}-app.xml"/>
+<arg value="${app.filename}.swf"/>
+<arg value="blackberry-tablet-icon.png"/>
+<arg value="${app.filename}-splash.png"/>
+<arg value="blackberry-tablet.xml"/>
+</exec>
+</target>
+
+<target name="debug-deploy" description="Deploy the debug .bar to the device in debug mode">
+<exec executable="${sdk.home}/bin/blackberry-deploy${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-debugHost"/>
+<arg value="${host.ip}"/>
+<arg value="-package"/>
+<arg value="${app.filename}-debug.bar"/>
+<arg value="-device"/>
+<arg value="${device.ip}"/>
+<arg value="-installApp"/>
+<arg value="-launchApp"/>
+<arg value="-password"/>
+<arg value="${device.password}"/>
+</exec>
+</target>
+
+<target name="dev-deploy" description="Deploy the dev .bar to the device">
+<exec executable="${sdk.home}/bin/blackberry-deploy${bin.ext}" failonerror="true" dir="../bin/">
+<arg value="-package"/>
+<arg value="${app.filename}-dev.bar"/>
+<arg value="-device"/>
+<arg value="${device.ip}"/>
+<arg value="-installApp"/>
+<arg value="-launchApp"/>
+<arg value="-password"/>
+<arg value="${device.password}"/>
+</exec>
+</target>
+
+<target name="release-deploy" description="Deploy the signed .bar to the device">
+<exec executable="${sdk.home}/bin/blackberry-deploy${bin.ext}" failonerror="true" dir="../bin/">
+<arg value="-package"/>
+<arg value="${app.filename}.bar"/>
+<arg value="-device"/>
+<arg value="${device.ip}"/>
+<arg value="-installApp"/>
+<arg value="-launchApp"/>
+<arg value="-password"/>
+<arg value="${device.password}"/>
+</exec>
+</target>
+
+<target name="sign-as-author" description="Sign the application as author for release to App World">
+<exec executable="${sdk.home}/bin/blackberry-signer${bin.ext}" failonerror="true" dir="../bin/">
+<arg value="-verbose"/>
+<arg value="-keystore"/>
+<arg value="${sign.keystore.file}"/>
+<arg value="-storepass"/>
+<arg value="${sign.keystore.password}"/>
+<arg value="${app.filename}.bar"/>
+<arg value="author"/>
+</exec>
+</target>
+
+<target name="sign-with-rim" description="Ask RIM to sign the application for release to App World">
+<exec executable="${sdk.home}/bin/blackberry-signer${bin.ext}" failonerror="true" dir="../bin/">
+<arg value="-verbose"/>
+<arg value="-cskpass"/>
+<arg value="${sign.csk.password}"/>
+<arg value="-keystore"/>
+<arg value="${sign.keystore.file}"/>
+<arg value="-storepass"/>
+<arg value="${sign.keystore.password}"/>
+<arg value="${app.filename}.bar"/>
+<arg value="RDK"/>
+</exec>
+</target>
+
+<target name="verify-signing" description="Verify signed application for release to App World">
+<exec executable="${sdk.home}/bin/blackberry-signer${bin.ext}" failonerror="true" dir="../bin/">
+<arg value="-verify"/>
+<arg value="-keystore"/>
+<arg value="${sign.keystore.file}"/>
+<arg value="-storepass"/>
+<arg value="${sign.keystore.password}"/>
+<arg value="${app.filename}.bar"/>
+</exec>
+</target>
+
+<target name="uninstall-debug" description="Uninstall the debug .bar">
+<exec executable="${sdk.home}/bin/blackberry-deploy${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-uninstallApp"/>
+<arg value="-device"/>
+<arg value="${device.ip}"/>
+<arg value="-password"/>
+<arg value="${device.password}"/>
+<arg value="-package"/>
+<arg value="${app.filename}-debug.bar"/>
+</exec>
+</target>
+
+<target name="uninstall-dev" description="Uninstall the dev .bar">
+<exec executable="${sdk.home}/bin/blackberry-deploy${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-uninstallApp"/>
+<arg value="-device"/>
+<arg value="${device.ip}"/>
+<arg value="-password"/>
+<arg value="${device.password}"/>
+<arg value="-package"/>
+<arg value="${app.filename}-dev.bar"/>
+</exec>
+</target>
+
+<target name="uninstall-release" description="Uninstall the release .bar">
+<exec executable="${sdk.home}/bin/blackberry-deploy${bin.ext}" failonerror="true" dir="../bin">
+<arg value="-uninstallApp"/>
+<arg value="-device"/>
+<arg value="${device.ip}"/>
+<arg value="-password"/>
+<arg value="${device.password}"/>
+<arg value="-package"/>
+<arg value="${app.filename}.bar"/>
+</exec>
+</target>
+
+<target name="increment-build-number" if="build.useBuildNumber">
+<buildnumber/>
+<replaceregexp file="blackberry-tablet.xml" match="&lt;buildId&gt;[0-9]*&lt;/buildId&gt;" replace="&lt;buildId&gt;${build.number}&lt;/buildId&gt;"/>
+</target>
+</project>
