@@ -32,7 +32,7 @@ package
 	[SWF(height="600", width="1024", frameRate="30", backgroundColor="#FFFFFF")]
 	
 	public class SimonSays extends Sprite
-	{	
+	{
 	
 		private var btn_TopLeft:LabelButton;
 		private var btn_TopRight:LabelButton;

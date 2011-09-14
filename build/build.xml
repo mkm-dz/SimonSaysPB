@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="Particle Soup Build Scripts" default="build.deploy.dev">
-<property file="build.config"/>
+<property file="build.notDeploy"/>
 
 <target name="build.deploy.debug" depends="debug-compile,debug-package,debug-deploy"
 description="Build, package and deploy the (unsigned) app in debug mode."/>
