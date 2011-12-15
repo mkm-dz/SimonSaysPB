@@ -5,11 +5,9 @@
   </initialWindow>
   <publisher>Guillermo Ortega</publisher>
   <platformVersion>1.0.0.0</platformVersion>
-  <buildId>1</buildId>
+  <buildId>7</buildId>
 <icon>
 <image>blackberry-tablet-icon.png</image>
 </icon>
 <splashscreen>SimonSays-splash.png</splashscreen>
-<author>MKM Dz</author>
-<authorId>gYAAgGMmoUprOM8od88ut1qe2pk</authorId>
 </qnx>

@@ -2,7 +2,6 @@ package
 {	
 	import MyUtilities.*;
 	import buttons.*;
-
 	
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -16,8 +15,6 @@ package
 	import flash.text.TextFormat;
 
 	
-
-	
 	import qnx.ui.text.Label;
 	import qnx.ui.buttons.LabelButton;
 	import qnx.ui.skins.SkinStates;
@@ -25,16 +22,18 @@ package
 	import qnx.dialog.DialogAlign;
 	import qnx.dialog.DialogSize;
 	import qnx.dialog.AlertDialog;
+	import qnx.dialog.PromptDialog;
 	
 	
 	
 	
 	
 	//Establecemos los parametros de configuracion inicial
-	[SWF(height="600", width="1024", frameRate="30", backgroundColor="#FFFFFF")]
-	
-	public class SimonSays extends Sprite
+
+	[SWF(height="600", width="1024", frameRate="30", backgroundColor="#000000")]
+	 public class SimonSays extends Sprite
 	{
+	
 		//declaramos las variablesde instancia
 		private var btn_TopLeft:LabelButton;
 		private var btn_TopRight:LabelButton;
@@ -54,6 +53,7 @@ package
 		private var lblHighScore:Label;
 		private var pointsInt:int;
 		private var highScoreInt:int;
+		private var highScoreName:String;
 		private var dao:SimonDao;
 		
 		
@@ -94,10 +94,10 @@ package
 			interGameTimer = new Timer(700,1);
 			dao = new SimonDao();
 			if(dao.countResults(1)>0){
-				trace("entro");
+				highScoreName=dao.getResults()[0].username;
 				highScoreInt=dao.getResults()[0].score;	
-				trace("d"+highScoreInt);
 			}else{
+				highScoreName="";
 				highScoreInt=0;
 			}
 			 
@@ -140,7 +140,7 @@ package
 			lblFormat.font = "BBAlpha Sans";
 			lblFormat.bold = true;
 			lblFormat.size = 15;
-			lblFormat.color = 0x000000;
+			lblFormat.color = 0xFFFFFF;
 		
 
 			//creamos las etiquetas y le aplicamos el formato creado anteriormente
@@ -157,9 +157,9 @@ package
 			
 			lblHighScore = new Label();
 			lblHighScore.format = lblFormat;
-			lblHighScore.x=stage.stageWidth/2-20;
+			lblHighScore.x=stage.stageWidth/2-70;
 			lblHighScore.width=300;
-			lblHighScore.htmlText="HighScore:"+highScoreInt;
+			lblHighScore.htmlText="HighScore:"+highScoreName+"   "+highScoreInt;
 			
 			points.x=Constants.BTNDEFACE/2;
 			points.y=20;
@@ -209,7 +209,7 @@ package
 			 */
 			firstRound=true;
 			
-			
+			 
 			//Dialogo que muestra el inicio del juego.
 			var myDialog:AlertDialog = new AlertDialog();
 				myDialog.title = "Instructions";
@@ -465,14 +465,38 @@ package
 				//se acabo el juego
 				playing=-1;
 				var myDialog:AlertDialog = new AlertDialog();
+				
 				myDialog.title = "GAME OVER";
 				myDialog.message = "Total moves:"+queueTwo.l+"\nYour Score:"+pointsInt+"\nYour level:"+level+"\nPlay Again?";
 				myDialog.dialogSize = DialogSize.SIZE_MEDIUM;
 				myDialog.addButton("Yes");
 				myDialog.addButton("No");
 				if(pointsInt>highScoreInt){
-					dao.emptyTable();
-					dao.insertRecord("aaa",pointsInt);
+					var promptName:PromptDialog = new PromptDialog();
+					promptName.message="Congratulations! New Highscore, please insert your name";
+					promptName.addButton("Ok");
+					promptName.addEventListener(Event.SELECT, function(evt:Event){
+						var reg:RegExp = /^[a-zA-Z0-9]{1,8}$/;
+						if(reg.test(promptName.text)){
+							dao.emptyTable();
+							dao.insertRecord(promptName.text,pointsInt);
+						}else{
+							var myDialog2:AlertDialog = new AlertDialog();
+							myDialog2.message="Please use only letters and numbers (between 1 and 8 characters)";
+							myDialog2.dialogSize = DialogSize.SIZE_MEDIUM;
+							myDialog2.addButton("Ok");
+							myDialog2.addEventListener(Event.SELECT, function(evt:Event){
+								myDialog2.cancel();
+								promptName.show(IowWindow.getAirWindow().group);
+								
+							},false, 0, true);
+							
+							myDialog2.show(IowWindow.getAirWindow().group);
+							
+						}
+						
+					},false, 0, true);
+					promptName.show(IowWindow.getAirWindow().group);
 				}
 				
 				myDialog.addEventListener(Event.SELECT, function(evt:Event){
@@ -499,11 +523,12 @@ package
 								firstRound=true;
 								trace(dao.getResults()[0].score);
 								highScoreInt=dao.getResults()[0].score;
+								highScoreName=dao.getResults()[0].username;
 								playing=0;
 								points.text="Points:"+pointsInt;
 								level=1;
 								soundChannel.stop();
-								lblHighScore.htmlText="HighScore:"+highScoreInt;
+								lblHighScore.htmlText="HighScore:"+highScoreName+"   "+highScoreInt;
 								lblLevel.htmlText="Level:"+level;
 									//(evt.target as AlertDialog).cancel();
 										},false, 0, true);
